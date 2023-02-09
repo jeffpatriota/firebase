@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { db } from './firebaseconnection';
-import { doc, setDoc, collection, addDoc, getDoc, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { db, auth } from './firebaseconnection';
+import { doc, setDoc, collection, addDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth'
 
 import './app.css';
 import { async } from '@firebase/util';
@@ -10,7 +11,29 @@ function App() {
   const [autor, setAutor] = useState('');
   const [idPost, setIdPost] = useState('');
 
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+
   const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    async function loadPosts() {
+      const unsub = onSnapshot(collection(db, "posts"), (onSnapshot) => {
+        let listaPost = [];
+
+        onSnapshot.forEach((doc) => {
+          listaPost.push({
+            id: doc.id,                           //Essa função onSnapshot fica em tempo real verificando se tem att no banco e ja atualiza na tela 
+            titulo: doc.data().titulo,
+            autor: doc.data().autor,
+          })
+        })
+
+        setPosts(listaPost);
+      })
+    }
+    loadPosts();
+  }, [])
 
   async function handleAdd() {
     //   await setDoc(doc(db, "posts", "12345"), {      //o setDoc tem que especificar o documento no caso o id 12345
@@ -70,30 +93,46 @@ function App() {
       })
   }
 
-async function editarPost (){
-  const docRef = doc(db, "posts", idPost)
-  await updateDoc(docRef, {
-    titulo: titulo,
-    autor:autor
-  })
-  .then(()=>{
-    console.log("POST ATUALIZADO!")
-    setIdPost('')
-    setTitulo('')
-    setAutor('')
-  })
-  .catch(()=>{
-    console.log("ERRO AO ATUALIZAR!")
-  })
-}
+  async function editarPost() {
+    const docRef = doc(db, "posts", idPost)
+    await updateDoc(docRef, {
+      titulo: titulo,
+      autor: autor
+    })
+      .then(() => {
+        console.log("POST ATUALIZADO!")
+        setIdPost('')
+        setTitulo('')
+        setAutor('')
+      })
+      .catch(() => {
+        console.log("ERRO AO ATUALIZAR!")
+      })
+  }
 
-async function excluirPost(id){
-  const docRef = doc(db, "posts", id)
-  await deleteDoc(docRef)
-  .then(()=>{
-    alert("POST DELETADO COM SUCESSO!")
-  })
-}
+  async function excluirPost(id) {
+    const docRef = doc(db, "posts", id)
+    await deleteDoc(docRef)
+      .then(() => {
+        alert("POST DELETADO COM SUCESSO!")
+      })
+  }
+
+  async function novoUsuario() {
+    await createUserWithEmailAndPassword(auth, email, senha)
+      .then(() => {
+        console.log("CADASTRADO COM SUCESSO!");
+        setEmail('')
+        setSenha('')
+      })
+      .catch((error) => {
+        if (error.code === 'auth/weak-password') {
+          alert('Senha muito fraca')
+        } else if (error.code == 'auth/email-already-in-use') {
+          alert("Email já existe!")
+        }
+      })
+  }
 
   return (
     <div>
@@ -101,26 +140,45 @@ async function excluirPost(id){
 
       <div className='container'>
 
+        <h2>Usuários</h2>
+
+        <label>Email</label>
+        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Digite seu email" /><br />
+        <label>Senha</label>
+        <input value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Digite sua senha" /><br />
+
+        <button onClick={novoUsuario}>Cadastrar</button>
+
+
+      </div>
+
+      <br /><br />
+      <hr />
+
+      <div className='container'>
+
+        <h2>Posts</h2>
+
         <label>ID do Post</label>
         <input
-          placeholder='Digite o ID do post que deseja atualizar' value={idPost} onChange={(e) => setIdPost(e.target.value)} /><br/>
+          placeholder='Digite o ID do post que deseja atualizar' value={idPost} onChange={(e) => setIdPost(e.target.value)} /><br />
 
         <label>Titulo:</label>
-        <textarea type="text" placeholder='Digite o titulo' value={titulo} onChange={(e) => setTitulo(e.target.value)} /><br/>
+        <textarea type="text" placeholder='Digite o titulo' value={titulo} onChange={(e) => setTitulo(e.target.value)} /><br />
         <label>Autor:</label>
-        <input type="text" placeholder='Autor do post' value={autor} onChange={(e) => setAutor(e.target.value)} /><br/>
-        <button onClick={handleAdd}>Cadastrar</button><br/>
-        <button onClick={buscarPost}>Buscar Post</button> <br/>
+        <input type="text" placeholder='Autor do post' value={autor} onChange={(e) => setAutor(e.target.value)} /><br />
+        <button onClick={handleAdd}>Cadastrar</button><br />
+        <button onClick={buscarPost}>Buscar Post</button> <br />
         <button onClick={editarPost}>Atualizar post</button>
 
         <ul>
           {posts.map((post) => {
             return (
               <li key={post.id}>
-                <strong>ID: {post.id}</strong><br/>
+                <strong>ID: {post.id}</strong><br />
                 <span> Titulo: {post.titulo}</span><br />
                 <span> Autor: {post.autor}</span><br /><br />
-                <button onClick={()=>excluirPost(post.id) }>Excluir</button> <br/><br/>
+                <button onClick={() => excluirPost(post.id)}>Excluir</button> <br /><br />
               </li>
             )
           })}
