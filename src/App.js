@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db, auth } from './firebaseconnection';
 import { doc, setDoc, collection, addDoc, getDoc, getDocs, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut} from 'firebase/auth'
 
 import './app.css';
 import { async } from '@firebase/util';
@@ -13,6 +13,10 @@ function App() {
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+
+  const [user, setUser] = useState(false);
+  const [userDatail, setUserDatail] = useState({});
+
 
   const [posts, setPosts] = useState([]);
 
@@ -134,59 +138,94 @@ function App() {
       })
   }
 
+  async function logarUsuario() {
+    await signInWithEmailAndPassword(auth, email, senha)
+      .then((value) => {
+        console.log("USER LOGADO COM SUCESSO!");
+        console.log(value.user);
+
+        setUserDatail({
+          uid: value.user.uid, email: value.user.email,
+        })
+        setUser(true);
+        setEmail('');
+        setSenha('');
+      })
+      .catch(() => {
+        console.log("ERRO AO FAZER O LOGIN");
+      })
+  }
+  async function fazerLogout() {
+    await signOut (auth)
+    setUser(false);
+    setUserDatail({})
+  }
+
   return (
     <div>
       <h1>ReactJS + Firebase :) </h1>
 
-      <div className='container'>
+      {user && (
+        <div>
+          <strong>Seja bem-vindo(a) (Você está logado!)</strong> <br />
+          <span>ID: {userDatail.uid} - Email: {userDatail.email}</span>
+          <button onClick={fazerLogout}>Sair da conta </button>
+          <br /><br />
 
-        <h2>Usuários</h2>
-
-        <label>Email</label>
-        <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Digite seu email" /><br />
-        <label>Senha</label>
-        <input value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Digite sua senha" /><br />
-
-        <button onClick={novoUsuario}>Cadastrar</button>
+          </div >
+        )}
 
 
-      </div>
+          <div className='container'>
 
-      <br /><br />
-      <hr />
+            <h2>Usuários</h2>
 
-      <div className='container'>
+            <label>Email</label>
+            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Digite seu email" /><br />
+            <label>Senha</label>
+            <input value={senha} onChange={(e) => setSenha(e.target.value)} placeholder="Digite sua senha" /><br />
 
-        <h2>Posts</h2>
+            <button onClick={novoUsuario}>Cadastrar</button>
+            <button onClick={logarUsuario}>Fazer Login</button>
 
-        <label>ID do Post</label>
-        <input
-          placeholder='Digite o ID do post que deseja atualizar' value={idPost} onChange={(e) => setIdPost(e.target.value)} /><br />
 
-        <label>Titulo:</label>
-        <textarea type="text" placeholder='Digite o titulo' value={titulo} onChange={(e) => setTitulo(e.target.value)} /><br />
-        <label>Autor:</label>
-        <input type="text" placeholder='Autor do post' value={autor} onChange={(e) => setAutor(e.target.value)} /><br />
-        <button onClick={handleAdd}>Cadastrar</button><br />
-        <button onClick={buscarPost}>Buscar Post</button> <br />
-        <button onClick={editarPost}>Atualizar post</button>
+          </div>
 
-        <ul>
-          {posts.map((post) => {
-            return (
-              <li key={post.id}>
-                <strong>ID: {post.id}</strong><br />
-                <span> Titulo: {post.titulo}</span><br />
-                <span> Autor: {post.autor}</span><br /><br />
-                <button onClick={() => excluirPost(post.id)}>Excluir</button> <br /><br />
-              </li>
-            )
-          })}
-        </ul>
-      </div>
+          <br /><br />
+          <hr />
 
-    </div>
-  );
-}
+          <div className='container'>
 
-export default App;
+            <h2>Posts</h2>
+
+            <label>ID do Post</label>
+            <input
+              placeholder='Digite o ID do post que deseja atualizar' value={idPost} onChange={(e) => setIdPost(e.target.value)} /><br />
+
+            <label>Titulo:</label>
+            <textarea type="text" placeholder='Digite o titulo' value={titulo} onChange={(e) => setTitulo(e.target.value)} /><br />
+            <label>Autor:</label>
+            <input type="text" placeholder='Autor do post' value={autor} onChange={(e) => setAutor(e.target.value)} /><br />
+            <button onClick={handleAdd}>Cadastrar</button><br />
+            <button onClick={buscarPost}>Buscar Post</button> <br />
+            <button onClick={editarPost}>Atualizar post</button>
+
+            <ul>
+              {posts.map((post) => {
+                return (
+                  <li key={post.id}>
+                    <strong>ID: {post.id}</strong><br />
+                    <span> Titulo: {post.titulo}</span><br />
+                    <span> Autor: {post.autor}</span><br /><br />
+                    <button onClick={() => excluirPost(post.id)}>Excluir</button> <br /><br />
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+
+        </div>
+      )
+      }
+
+      export default App;
