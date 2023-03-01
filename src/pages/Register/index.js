@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { auth } from '../../firebaseconnection'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
-import { Navigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -37,7 +37,7 @@ export default function Register() {
       <form className='form' onSubmit={handleRegister}>
         <input
           type="text"
-          placeholder='Digite se email...'
+          placeholder='Digite seu email...'
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
