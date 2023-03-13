@@ -3,7 +3,7 @@ import './style.css'
 
 import { Link } from 'react-router-dom'
 
-import { auth } from '../../firebaseconnection'
+import { auth } from '../../firebaseConnection'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 
 import { useNavigate } from 'react-router-dom'
